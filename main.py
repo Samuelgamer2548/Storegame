@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Storegame - Ultimate Python GUI v1.21.2
-Interface profissional estilo PortMaster para R36S
+Storegame - Stealth GUI v1.21.3
+Interface profissional com navegacao R36S corrigida
 Autor: SamuelGamer2548 (Protegido)
 """
 
@@ -18,43 +18,48 @@ import hashlib
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Callable
 
-# ==================== SEGURANCA ====================
+# ==================== SEGURANCA OFUSCADA ====================
 AUTH_HASH = "8a7d5f9e3c2b1a4d6e8f0c9b7a5d3e1f2c4b6a8d0e2f4c6a8b0d2e4f6a8c0b2e4"
+SCRIPT_PATH = os.path.abspath(__file__)
+SCRIPT_DIR = os.path.dirname(SCRIPT_PATH)
+
+# Verificar se esta na pasta correta
+if not SCRIPT_DIR.endswith("Storegame"):
+    print("ERRO: O script deve estar na pasta Storegame")
+    sys.exit(1)
+
+# Verificar assinatura
 if hashlib.sha256(b"SamuelGamer2548").hexdigest() != AUTH_HASH:
     print("ERRO: Assinatura invalida")
     sys.exit(1)
 
 # ==================== CONFIGURACOES ====================
-STOREGAME_PATH = os.environ.get('STOREGAME_PATH', '/roms/tools/Storegame')
+STOREGAME_PATH = os.environ.get('STOREGAME_PATH', SCRIPT_DIR)
 SOUNDS_PATH = os.environ.get('STOREGAME_SOUNDS', f'{STOREGAME_PATH}/sounds')
 CONFIG_PATH = os.environ.get('STOREGAME_CONFIG', f'{STOREGAME_PATH}/config')
-CACHE_PATH = os.environ.get('STOREGAME_CACHE', f'{STOREGAME_PATH}/cache')
 DATABASE_FILE = f'{STOREGAME_PATH}/database.json'
-SCRIPT_DIR = os.environ.get('STOREGAME_SCRIPT_DIR', '/roms/tools')
 
 # Resolucao R36S
 SCREEN_WIDTH = 640
 SCREEN_HEIGHT = 480
-FPS = 60  # Mais suave
+FPS = 60
 
-# Cores do tema Ultimate (Azul escuro #000033 + Dourado)
+# Cores do tema Stealth (Azul escuro + Dourado)
 COLORS = {
-    "bg_dark": (0, 0, 51),        # #000033
-    "bg_card": (20, 20, 80),       # Azul medio
-    "bg_highlight": (40, 40, 120),  # Azul claro
-    "text_primary": (255, 255, 255), # Branco
-    "text_secondary": (200, 200, 200), # Cinza claro
-    "gold": (255, 215, 0),          # Dourado
-    "gold_dark": (204, 172, 0),     # Dourado escuro
-    "border": (255, 255, 255),      # Branco
-    "border_selected": (255, 215, 0), # Dourado
-    "shadow": (0, 0, 25)            # Sombra
+    "bg_dark": (0, 0, 40),
+    "bg_card": (20, 20, 80),
+    "bg_highlight": (40, 40, 120),
+    "text_primary": (255, 255, 255),
+    "text_secondary": (200, 200, 200),
+    "gold": (255, 215, 0),
+    "gold_dark": (204, 172, 0),
+    "border": (255, 255, 255),
+    "border_selected": (255, 215, 0),
+    "shadow": (0, 0, 20)
 }
 
 # ==================== CLASSE DOWNLOADER ====================
 class Downloader:
-    """Gerenciador de downloads com Modo Turbo"""
-    
     def __init__(self):
         self.download_path = "/roms"
         self.turbo_mode = self._check_aria2()
@@ -184,28 +189,12 @@ class AudioManager:
             pygame.mixer.music.play(-1)
         except:
             pass
-    
-    def next_track(self):
-        if self.music_files:
-            self.current_track = (self.current_track + 1) % len(self.music_files)
-            pygame.mixer.music.stop()
-            self._play_current()
-    
-    def prev_track(self):
-        if self.music_files:
-            self.current_track = (self.current_track - 1) % len(self.music_files)
-            pygame.mixer.music.stop()
-            self._play_current()
-    
-    def set_volume(self, volume: float):
-        self.volume = max(0.0, min(1.0, volume))
-        pygame.mixer.music.set_volume(self.volume)
 
 # ==================== CLASSE GUI PRINCIPAL ====================
 class StoregameGUI:
     def __init__(self):
         pygame.init()
-        pygame.display.set_caption("Storegame Ultimate")
+        pygame.display.set_caption("Storegame Stealth")
         
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         self.clock = pygame.time.Clock()
@@ -215,26 +204,24 @@ class StoregameGUI:
         # Carregar database
         self.systems = self._load_database()
         self.selected_index = 0
-        self.menu_stack = ["main"]
+        self.menu_stack = ["main"]  # "main" ou "games"
         self.current_games = []
         self.game_selected = 0
-        self.animation_offset = 0
-        self.animation_dir = 1
         
-        # Componentes
+        # Downloader
         self.downloader = Downloader()
         self.audio = AudioManager(SOUNDS_PATH)
         
-        # Estado da interface
+        # Estado do download
+        self.show_download = False
         self.download_progress = 0
         self.download_status = ""
-        self.show_download = False
-        
-        # Iniciar musica
-        self.audio._play_current()
         
         # Criar superficies estaticas
         self._create_static_surfaces()
+        
+        # Iniciar musica
+        self.audio._play_current()
     
     def _load_fonts(self):
         return {
@@ -254,83 +241,49 @@ class StoregameGUI:
     
     def _get_default_systems(self) -> List[Dict]:
         return [
-            {"id": "NES", "name": "Nintendo Entertainment System", "icon": "NES",
-             "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20(Headered)/"},
-            {"id": "SNES", "name": "Super Nintendo", "icon": "SNES",
-             "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/"},
-            {"id": "N64", "name": "Nintendo 64", "icon": "N64",
-             "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%2064%20(BigEndian)/"},
-            {"id": "PSX", "name": "PlayStation", "icon": "PSX",
-             "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation/"}
+            {"id": "NES", "name": "Nintendo Entertainment System", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20(Headered)/"},
+            {"id": "SNES", "name": "Super Nintendo", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/"},
+            {"id": "N64", "name": "Nintendo 64", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%2064%20(BigEndian)/"},
+            {"id": "PSX", "name": "PlayStation", "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation/"}
         ]
     
     def _create_static_surfaces(self):
-        # Logo principal
         self.logo_surf = self.fonts['large'].render("STOREGAME", True, COLORS["gold"])
-        
-        # Versao
-        self.version_surf = self.fonts['tiny'].render("v1.21.2 Ultimate", True, COLORS["text_secondary"])
-        
-        # Barra de titulo
-        bar_width = SCREEN_WIDTH - 40
-        self.title_bar = pygame.Surface((bar_width, 40))
-        self.title_bar.fill(COLORS["gold"])
-        
-        # Barra de rodape
+        self.version_surf = self.fonts['tiny'].render("v1.21.3 Stealth", True, COLORS["text_secondary"])
         self.footer_text = self.fonts['tiny'].render("(A) SELECIONAR    (B) VOLTAR    (START) SAIR", 
                                                      True, COLORS["gold"])
     
     def draw_background(self):
         self.screen.fill(COLORS["bg_dark"])
         
-        # Efeito de gradiente sutil (linhas horizontais)
+        # Efeito de gradiente
         for i in range(0, SCREEN_HEIGHT, 4):
-            alpha = 10 + (i * 20 // SCREEN_HEIGHT)
-            color = (0, 0, 51 + alpha)
+            color = (0, 0, 40 + i // 10)
             pygame.draw.line(self.screen, color, (0, i), (SCREEN_WIDTH, i))
     
     def draw_top_bar(self):
-        # Barra superior
         pygame.draw.rect(self.screen, COLORS["gold"], (0, 0, SCREEN_WIDTH, 4))
         pygame.draw.rect(self.screen, COLORS["bg_highlight"], (0, 4, SCREEN_WIDTH, 40))
-        
-        # Logo
-        logo_x = 20
-        logo_y = 12
-        self.screen.blit(self.logo_surf, (logo_x, logo_y))
-        
-        # Versao
+        self.screen.blit(self.logo_surf, (20, 12))
         self.screen.blit(self.version_surf, (SCREEN_WIDTH - 100, 20))
-        
-        # Linha dourada inferior
         pygame.draw.line(self.screen, COLORS["gold"], (0, 45), (SCREEN_WIDTH, 45), 2)
     
     def draw_bottom_bar(self):
-        # Barra inferior
         pygame.draw.rect(self.screen, COLORS["bg_highlight"], (0, SCREEN_HEIGHT-35, SCREEN_WIDTH, 35))
-        
-        # Texto de comandos
         footer_x = (SCREEN_WIDTH - self.footer_text.get_width()) // 2
-        footer_y = SCREEN_HEIGHT - 25
-        self.screen.blit(self.footer_text, (footer_x, footer_y))
-        
-        # Linha dourada superior
+        self.screen.blit(self.footer_text, (footer_x, SCREEN_HEIGHT-25))
         pygame.draw.line(self.screen, COLORS["gold"], (0, SCREEN_HEIGHT-36), (SCREEN_WIDTH, SCREEN_HEIGHT-36), 2)
     
     def draw_card(self, x: int, y: int, width: int, height: int, 
                   title: str, subtitle: str = "", selected: bool = False):
-        """Desenha card com efeito de selecao"""
-        
         # Sombra
-        shadow_rect = pygame.Rect(x+3, y+3, width, height)
-        pygame.draw.rect(self.screen, COLORS["shadow"], shadow_rect, border_radius=8)
+        pygame.draw.rect(self.screen, COLORS["shadow"], (x+3, y+3, width, height), border_radius=8)
         
-        # Card principal
+        # Card
         card_rect = pygame.Rect(x, y, width, height)
         if selected:
             bg_color = COLORS["bg_highlight"]
             border_color = COLORS["gold"]
-            # Efeito de brilho
             pygame.draw.rect(self.screen, COLORS["gold_dark"], card_rect, 3, border_radius=8)
         else:
             bg_color = COLORS["bg_card"]
@@ -339,12 +292,11 @@ class StoregameGUI:
         pygame.draw.rect(self.screen, bg_color, card_rect, border_radius=8)
         pygame.draw.rect(self.screen, border_color, card_rect, 2, border_radius=8)
         
-        # Titulo
+        # Texto
         title_surf = self.fonts['small'].render(title, True, COLORS["text_primary"])
         title_rect = title_surf.get_rect(center=(x + width//2, y + height//2 - 10))
         self.screen.blit(title_surf, title_rect)
         
-        # Subtitulo (ID)
         if subtitle:
             sub_surf = self.fonts['tiny'].render(subtitle, True, COLORS["text_secondary"])
             sub_rect = sub_surf.get_rect(center=(x + width//2, y + height//2 + 15))
@@ -355,33 +307,23 @@ class StoregameGUI:
         self.draw_top_bar()
         self.draw_bottom_bar()
         
-        # Grade de sistemas
-        card_width = 180
-        card_height = 90
+        # Grade 3x3
+        card_width, card_height = 180, 90
         cols = 3
         spacing = 20
         start_x = (SCREEN_WIDTH - (cols * (card_width + spacing))) // 2
         start_y = 80
         
-        # Animacao do seletor
-        self.animation_offset += self.animation_dir * 0.5
-        if self.animation_offset > 5 or self.animation_offset < -5:
-            self.animation_dir *= -1
-        
         for i, system in enumerate(self.systems):
+            if i >= 9: break  # So mostra 9 na grade principal
             row = i // cols
             col = i % cols
             x = start_x + col * (card_width + spacing)
             y = start_y + row * (card_height + spacing)
             
-            selected = (i == self.selected_index)
-            
-            # Efeito de animacao no card selecionado
-            if selected:
-                x += int(self.animation_offset)
-            
             self.draw_card(x, y, card_width, card_height, 
-                          system['name'][:18], system['id'], selected)
+                          system['name'][:18], system['id'], 
+                          selected=(i == self.selected_index))
     
     def draw_game_list(self):
         self.draw_background()
@@ -390,44 +332,28 @@ class StoregameGUI:
         
         system = self.systems[self.selected_index]
         
-        # Titulo da tela
-        title = f"{system['name']} - Jogos Disponiveis"
+        # Titulo
+        title = f"{system['name']} - Jogos"
         title_surf = self.fonts['medium'].render(title, True, COLORS["gold"])
         title_rect = title_surf.get_rect(center=(SCREEN_WIDTH//2, 60))
         self.screen.blit(title_surf, title_rect)
         
-        # Lista de jogos
+        # Lista
         if self.current_games:
             start_y = 100
             for i, game in enumerate(self.current_games[:12]):
                 y = start_y + i * 28
                 
-                # Fundo do item
                 if i == self.game_selected:
                     pygame.draw.rect(self.screen, COLORS["bg_highlight"], 
                                     (50, y-2, SCREEN_WIDTH-100, 28))
-                    
-                    # Indicador dourado
-                    pygame.draw.rect(self.screen, COLORS["gold"], 
-                                    (45, y-2, 3, 28))
+                    pygame.draw.rect(self.screen, COLORS["gold"], (45, y-2, 3, 28))
                 
-                # Nome do jogo (truncado)
-                display_name = game
-                if len(display_name) > 50:
-                    display_name = display_name[:47] + "..."
-                
+                display_name = game if len(game) <= 50 else game[:47] + "..."
                 game_surf = self.fonts['small'].render(display_name, True, COLORS["text_primary"])
                 self.screen.blit(game_surf, (60, y))
-            
-            # Indicador de mais jogos
-            if len(self.current_games) > 12:
-                more_text = f"... e mais {len(self.current_games)-12} jogos"
-                more_surf = self.fonts['tiny'].render(more_text, True, COLORS["text_secondary"])
-                self.screen.blit(more_surf, (60, start_y + 12*28 + 10))
         else:
-            # Loading
-            loading = self.fonts['medium'].render("Carregando lista de jogos...", 
-                                                 True, COLORS["text_secondary"])
+            loading = self.fonts['medium'].render("Carregando...", True, COLORS["text_secondary"])
             loading_rect = loading.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
             self.screen.blit(loading, loading_rect)
     
@@ -435,48 +361,42 @@ class StoregameGUI:
         if not self.show_download:
             return
         
-        # Fundo semi-transparente
+        # Fundo escuro
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         overlay.set_alpha(200)
         overlay.fill(COLORS["bg_dark"])
         self.screen.blit(overlay, (0, 0))
         
-        # Janela de progresso
-        window_width = 400
-        window_height = 150
-        window_x = (SCREEN_WIDTH - window_width) // 2
-        window_y = (SCREEN_HEIGHT - window_height) // 2
+        # Janela
+        win_w, win_h = 400, 150
+        win_x = (SCREEN_WIDTH - win_w) // 2
+        win_y = (SCREEN_HEIGHT - win_h) // 2
         
         pygame.draw.rect(self.screen, COLORS["bg_highlight"], 
-                        (window_x, window_y, window_width, window_height))
+                        (win_x, win_y, win_w, win_h))
         pygame.draw.rect(self.screen, COLORS["gold"], 
-                        (window_x, window_y, window_width, window_height), 3)
+                        (win_x, win_y, win_w, win_h), 3)
         
         # Nome do jogo
         game_name = self.downloader.current_game
         if len(game_name) > 30:
             game_name = game_name[:27] + "..."
-        
         name_surf = self.fonts['small'].render(game_name, True, COLORS["text_primary"])
-        name_rect = name_surf.get_rect(center=(SCREEN_WIDTH//2, window_y + 30))
+        name_rect = name_surf.get_rect(center=(SCREEN_WIDTH//2, win_y + 30))
         self.screen.blit(name_surf, name_rect)
         
         # Barra de progresso
-        bar_width = 300
-        bar_height = 20
-        bar_x = (SCREEN_WIDTH - bar_width) // 2
-        bar_y = window_y + 70
+        bar_w, bar_h = 300, 20
+        bar_x = (SCREEN_WIDTH - bar_w) // 2
+        bar_y = win_y + 70
         
-        pygame.draw.rect(self.screen, COLORS["bg_dark"], 
-                        (bar_x, bar_y, bar_width, bar_height))
+        pygame.draw.rect(self.screen, COLORS["bg_dark"], (bar_x, bar_y, bar_w, bar_h))
         
         if self.downloader.progress > 0:
-            fill_width = int(bar_width * self.downloader.progress / 100)
-            pygame.draw.rect(self.screen, COLORS["gold"], 
-                            (bar_x, bar_y, fill_width, bar_height))
+            fill_w = int(bar_w * self.downloader.progress / 100)
+            pygame.draw.rect(self.screen, COLORS["gold"], (bar_x, bar_y, fill_w, bar_h))
         
-        pygame.draw.rect(self.screen, COLORS["border"], 
-                        (bar_x, bar_y, bar_width, bar_height), 2)
+        pygame.draw.rect(self.screen, COLORS["border"], (bar_x, bar_y, bar_w, bar_h), 2)
         
         # Porcentagem
         percent_surf = self.fonts['medium'].render(f"{self.downloader.progress}%", 
@@ -496,22 +416,15 @@ class StoregameGUI:
                 self.running = False
             
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
-                    if self.menu_stack[-1] == "main":
+                # ===== NAVEGACAO CORRIGIDA PARA R36S =====
+                if self.menu_stack[-1] == "main":
+                    # Menu principal
+                    if event.key == pygame.K_UP:
                         self.selected_index = max(0, self.selected_index - 1)
-                    else:
-                        self.game_selected = max(0, self.game_selected - 1)
-                
-                elif event.key == pygame.K_DOWN:
-                    if self.menu_stack[-1] == "main":
+                    elif event.key == pygame.K_DOWN:
                         self.selected_index = min(len(self.systems)-1, self.selected_index + 1)
-                    else:
-                        max_index = len(self.current_games) - 1
-                        self.game_selected = min(max_index, self.game_selected + 1)
-                
-                elif event.key == pygame.K_RETURN or event.key == pygame.K_a:
-                    if self.menu_stack[-1] == "main":
-                        # Selecionar sistema
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_a:
+                        # Botao A - Selecionar sistema
                         system = self.systems[self.selected_index]
                         self.menu_stack.append("games")
                         self.game_selected = 0
@@ -523,8 +436,19 @@ class StoregameGUI:
                         thread = threading.Thread(target=load_games)
                         thread.daemon = True
                         thread.start()
-                    else:
-                        # Baixar jogo
+                    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_b:
+                        # Botao B - Sair
+                        self.running = False
+                
+                elif self.menu_stack[-1] == "games":
+                    # Lista de jogos
+                    if event.key == pygame.K_UP:
+                        self.game_selected = max(0, self.game_selected - 1)
+                    elif event.key == pygame.K_DOWN:
+                        max_index = len(self.current_games) - 1
+                        self.game_selected = min(max_index, self.game_selected + 1)
+                    elif event.key == pygame.K_RETURN or event.key == pygame.K_a:
+                        # Botao A - Baixar jogo
                         if self.current_games:
                             game = self.current_games[self.game_selected]
                             system = self.systems[self.selected_index]
@@ -538,21 +462,10 @@ class StoregameGUI:
                                 game_url, game, system['id'], progress_callback
                             )
                             self.show_download = True
-                
-                elif event.key == pygame.K_b or event.key == pygame.K_ESCAPE:
-                    if self.menu_stack[-1] == "games":
+                    elif event.key == pygame.K_ESCAPE or event.key == pygame.K_b:
+                        # Botao B - Voltar ao menu principal
                         self.menu_stack.pop()
                         self.show_download = False
-                    else:
-                        self.running = False
-                
-                elif event.key == pygame.K_HOME or event.key == pygame.K_END:
-                    self.running = False
-                
-                elif event.key == pygame.K_n:
-                    self.audio.next_track()
-                elif event.key == pygame.K_p:
-                    self.audio.prev_track()
     
     def run(self):
         while self.running:
@@ -577,4 +490,4 @@ if __name__ == "__main__":
     gui.run()
     sys.exit(0)
 
-### END OF STOREGAME v1.21.2 ULTIMATE ###
+### END OF STOREGAME v1.21.3 STEALTH ###
