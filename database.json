@@ -1,28 +1,13 @@
 {
     "systems": [
-        {"id": "NES", "name": "Nintendo Entertainment System", "icon": "NES", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20(Headered)/"},
-        {"id": "SNES", "name": "Super Nintendo", "icon": "SNES", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/"},
-        {"id": "N64", "name": "Nintendo 64", "icon": "N64", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%2064%20(BigEndian)/"},
-        {"id": "GB", "name": "Game Boy", "icon": "GB", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy/"},
-        {"id": "GBC", "name": "Game Boy Color", "icon": "GBC", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy%20Color/"},
-        {"id": "GBA", "name": "Game Boy Advance", "icon": "GBA", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy%20Advance/"},
-        {"id": "NDS", "name": "Nintendo DS", "icon": "NDS", 
-         "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20DS%20(Decrypted)/"},
-        {"id": "PSX", "name": "PlayStation", "icon": "PSX", 
-         "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation/"},
-        {"id": "PSP", "name": "PlayStation Portable", "icon": "PSP", 
-         "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%20Portable/"},
-        {"id": "GAMEGEAR", "name": "Game Gear", "icon": "GG", 
-         "url": "https://myrient.erista.me/files/No-Intro/Sega%20-%20Game%20Gear/"},
-        {"id": "GENESIS", "name": "Mega Drive/Genesis", "icon": "MD", 
-         "url": "https://myrient.erista.me/files/No-Intro/Sega%20-%20Mega%20Drive%20-%20Genesis/"},
-        {"id": "PICO8", "name": "PICO-8", "icon": "P8", 
-         "url": "https://myrient.erista.me/files/No-Intro/Lexaloffle%20-%20PICO-8/"}
+        {"id": "NES", "name": "Nintendo Entertainment System", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20Entertainment%20System%20(Headered)/"},
+        {"id": "SNES", "name": "Super Nintendo", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Super%20Nintendo%20Entertainment%20System/"},
+        {"id": "N64", "name": "Nintendo 64", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%2064%20(BigEndian)/"},
+        {"id": "GB", "name": "Game Boy", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy/"},
+        {"id": "GBC", "name": "Game Boy Color", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy%20Color/"},
+        {"id": "GBA", "name": "Game Boy Advance", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Game%20Boy%20Advance/"},
+        {"id": "NDS", "name": "Nintendo DS", "url": "https://myrient.erista.me/files/No-Intro/Nintendo%20-%20Nintendo%20DS%20(Decrypted)/"},
+        {"id": "PSX", "name": "PlayStation", "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation/"},
+        {"id": "PSP", "name": "PlayStation Portable", "url": "https://myrient.erista.me/files/Redump/Sony%20-%20PlayStation%20Portable/"}
     ]
 }
